@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>🏋️ Bench Clicker</title>
+<style>
+:root {
+  --bg:#10131a;
+  --panel:#1b2230;
+  --panel2:#242e40;
+  --accent:#ffcc4d;
+  --text:#f5f7fb;
+  --muted:#aab4c5;
+}
+* { 
+  box-sizing:border-box; 
+  user-select:none; 
+  -webkit-user-select:none; 
+  -webkit-tap-highlight-color:transparent; 
+}
+body {
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(circle at top,#27334a 0,#10131a 55%);
+  color:var(--text);
+  font-family:system-ui,Segoe UI,sans-serif;
+  padding:22px;
+}
+.wrap { max-width:1050px; margin:auto; }
+header { text-align:center; margin-bottom:22px; }
+h1 { margin:0; font-size:clamp(2rem,5vw,3.3rem); letter-spacing:3px; }
+header p { color:var(--muted); margin:8px 0; }
+.stats {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:18px;
+}
+.stat,.panel {
+  background:rgba(27,34,48,.96);
+  border:1px solid #344158;
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 10px 30px #0002;
+}
+.stat span { display:block; color:var(--muted); font-size:.85rem; }
+.stat strong { display:block; font-size:1.45rem; margin-top:4px; }
+.layout { display:grid; grid-template-columns:1.1fr .9fr; gap:18px; }
+.gym {
+  min-height:410px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  overflow:hidden;
+  position:relative;
+}
+.level {
+  background:#344158;
+  color:var(--accent);
+  border-radius:99px;
+  padding:6px 13px;
+  font-weight:800;
+  margin-bottom:12px;
+}
+#lifter {
+  border:2px solid #50617b;
+  cursor:pointer;
+  background:linear-gradient(145deg,#2c3b52,#182131);
+  width:210px;
+  height:210px;
+  border-radius:50%;
+  font-size:105px;
+  display:grid;
+  place-items:center;
+  box-shadow:0 12px 0 #0c1018,0 18px 35px #0005;
+  transition:transform .08s;
+  touch-action:manipulation;
+}
+#lifter:active { transform:scale(.94) translateY(5px); }
+.hint { color:var(--muted); margin:23px 0 0; }
+.bar {
+  width:min(360px,90%);
+  height:12px;
+  background:#0e121a;
+  border-radius:99px;
+  overflow:hidden;
+  margin-top:15px;
+  border:1px solid #3a465b;
+}
+#progress {
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#55d98b,#ffcc4d);
+  transition:width .25s;
+}
+#progressText { font-size:.85rem; color:var(--muted); margin-top:7px; }
+h2 { margin:0 0 12px; font-size:1.25rem; }
+.upgrade {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:space-between;
+  padding:13px;
+  background:var(--panel2);
+  border:1px solid #3b4961;
+  border-radius:12px;
+  margin-top:10px;
+}
+.upgrade h3 { margin:0 0 4px; font-size:1rem; }
+.upgrade p { margin:0; color:var(--muted); font-size:.85rem; line-height:1.4; }
+.buy {
+  flex-shrink:0;
+  background:var(--accent);
+  color:#20202a;
+  border:0;
+  border-radius:10px;
+  padding:10px 12px;
+  font-weight:900;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.buy:disabled { opacity:.35; cursor:not-allowed; }
+.bottom {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:15px;
+  color:var(--muted);
+  font-size:.85rem;
+}
+.btn-group { display:flex; gap:8px; }
+#shareWa {
+  background:#25D366;
+  color:#0c1018;
+  border:0;
+  border-radius:9px;
+  padding:8px 12px;
+  font-weight:800;
+  cursor:pointer;
+}
+#reset {
+  background:transparent;
+  color:#ff9c9c;
+  border:1px solid #8c454d;
+  border-radius:9px;
+  padding:8px 11px;
+  cursor:pointer;
+}
+.float {
+  position:fixed;
+  z-index:5;
+  pointer-events:none;
+  font-weight:900;
+  color:#ffdf6e;
+  text-shadow:0 2px 3px #000;
+  animation:floatUp .9s ease-out forwards;
+}
+@keyframes floatUp {
+  to { opacity:0; transform:translateY(-90px) scale(1.2); }
+}
+
+/* Celebración al subir de nivel */
+#celebration {
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:20;
+  align-items:center;
+  justify-content:center;
+  background:#0009;
+  padding:16px;
+}
+#celebration.show { display:flex; }
+.celebrate-card {
+  text-align:center;
+  background:#121722;
+  border:2px solid var(--accent);
+  border-radius:20px;
+  padding:18px;
+  width:min(440px,94vw);
+  box-shadow:0 0 45px #ffcc4d55;
+  animation:pop .35s ease-out;
+}
+.celebrate-card h2 {
+  color:var(--accent);
+  font-size:1.5rem;
+  margin:0 0 10px;
+}
+.celebrate-card img {
+  display:block;
+  width:100%;
+  max-height:230px;
+  object-fit:contain;
+  border-radius:12px;
+  background:#242e40;
+  min-height:120px;
+}
+.celebrate-card p { margin:10px 0; }
+#closeCelebration {
+  background:var(--accent);
+  border:0;
+  border-radius:9px;
+  padding:9px 18px;
+  font-weight:800;
+  cursor:pointer;
+}
+@keyframes pop {
+  from { transform:scale(.65); opacity:0; }
+  to { transform:scale(1); opacity:1; }
+}
+.confetti {
+  position:fixed;
+  top:-20px;
+  width:9px;
+  height:14px;
+  z-index:25;
+  animation:fall linear forwards;
+  pointer-events:none;
+}
+@keyframes fall {
+  to { transform:translateY(110vh) rotate(900deg); opacity:.9; }
+}
+@media(max-width:760px) {
+  body { padding:13px; }
+  .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .layout { grid-template-columns:1fr; }
+  .gym { min-height:330px; }
+  .stat strong { font-size:1.2rem; }
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<header>
+  <h1>🏋️ BENCH CLICKER</h1>
+  <p>Entrena, gana monedas y conquista nuevos niveles.</p>
+</header>
+
+<section class="stats">
+  <div class="stat">
+    <span>Press banca</span>
+    <strong><b id="weight">20</b> kg</strong>
+  </div>
+  <div class="stat">
+    <span>Monedas</span>
+    <strong id="coins">0</strong>
+  </div>
+  <div class="stat">
+    <span>Monedas por clic</span>
+    <strong id="perClick">1</strong>
+  </div>
+  <div class="stat">
+    <span>Monedas por segundo</span>
+    <strong id="perSecond">0</strong>
+  </div>
+</section>
+
+<main class="layout">
+
+<section class="panel gym">
+  <div class="level" id="levelPill">NIVEL 1</div>
+  <button id="lifter" aria-label="Haz clic para entrenar">🏋️</button>
+  <p class="hint">¡Toca al chico para ganar monedas!</p>
+  <div class="bar"><div id="progress"></div></div>
+  <div id="progressText">20 / 40 kg para el siguiente nivel</div>
+</section>
+
+<section class="panel">
+  <h2>🛒 Mejoras de entrenamiento</h2>
+
+  <div class="upgrade">
+    <div>
+      <h3>🧠 Técnica</h3>
+      <p id="techDesc">Gana más monedas con cada clic.</p>
+    </div>
+    <button class="buy" id="buyTech">
+      Comprar · <span id="techCost">15</span> 🪙
+    </button>
+  </div>
+
+  <div class="upgrade">
+    <div>
+      <h3>💪 Más músculo</h3>
+      <p id="muscleDesc">Aumenta los kilos de press banca.</p>
+    </div>
+    <button class="buy" id="buyMuscle">
+      Comprar · <span id="muscleCost">60</span> 🪙
+    </button>
+  </div>
+
+  <div class="upgrade">
+    <div>
+      <h3>⚡ Generador de monedas</h3>
+      <p>Gana monedas automáticamente cada segundo.</p>
+    </div>
+    <button class="buy" id="buyGenerator">
+      Comprar · <span id="generatorCost">25</span> 🪙
+    </button>
+  </div>
+
+  <div class="bottom">
+    <span>Subir de nivel potencia las mejoras.</span>
+    <div class="btn-group">
+      <button id="shareWa">📲 Retar en WhatsApp</button>
+      <button id="reset">Reiniciar</button>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- Ventana de celebración -->
+<div id="celebration">
+  <div class="celebrate-card">
+    <h2 id="celebrationTitle">¡NUEVO NIVEL!</h2>
+
+    <img
+      id="ronnieGif"
+      alt="Ronnie Coleman celebrando"
+      src="https://gifdb.com/images/branded/high/ronnie-coleman-releasing-big-muscles-faanl174p24dltzv.gif"
+    >
+
+    <p id="celebrationText">¡Más fuerza, más músculo!</p>
+    <button id="closeCelebration">¡LIGHTWEIGHT BABY!</button>
+  </div>
+</div>
+
+<script>
+(() => {
+
+const $ = id => document.getElementById(id);
+
+const bounds = [
+  [20, 40],
+  [40, 60],
+  [60, 100],
+  [100, 200]
+];
+
+let weight = 20;
+let coins = 0;
+let level = 1;
+
+let techLevel = 0;
+let muscleLevel = 0;
+let generators = 0;
+
+let techCost = 15;
+let muscleCost = 60;
+let generatorCost = 25;
+
+let perClick = 1;
+let perSecond = 0;
+
+let celebrationTimer;
+
+/* Cargar partida guardada si existe */
+try {
+  const saved = JSON.parse(localStorage.getItem('benchClickerSave'));
+  if (saved) {
+    weight = saved.weight ?? 20;
+    coins = saved.coins ?? 0;
+    level = saved.level ?? 1;
+    techLevel = saved.techLevel ?? 0;
+    muscleLevel = saved.muscleLevel ?? 0;
+    generators = saved.generators ?? 0;
+    techCost = saved.techCost ?? 15;
+    muscleCost = saved.muscleCost ?? 60;
+    generatorCost = saved.generatorCost ?? 25;
+    perClick = saved.perClick ?? 1;
+    perSecond = saved.perSecond ?? 0;
+  }
+} catch (e) {}
+
+function saveGame() {
+  try {
+    localStorage.setItem('benchClickerSave', JSON.stringify({
+      weight, coins, level, techLevel, muscleLevel, generators,
+      techCost, muscleCost, generatorCost, perClick, perSecond
+    }));
+  } catch (e) {}
+}
+
+const fmt = n =>
+  Number.isInteger(n)
+    ? n.toLocaleString('es-ES')
+    : n.toLocaleString('es-ES', { maximumFractionDigits: 1 });
+
+const scale = () => Math.pow(2, level - 1);
+
+function rangeFor(lvl) {
+  if (lvl <= 4) return bounds[lvl - 1];
+  const min = 200 * Math.pow(2, lvl - 5);
+  return [min, min * 2];
+}
+
+function getLevel(w) {
+  if (w < 40) return 1;
+  if (w < 60) return 2;
+  if (w < 100) return 3;
+  if (w < 200) return 4;
+  return 5 + Math.floor(Math.log2(w / 200));
+}
+
+function updateLevel(oldLevel) {
+  const next = getLevel(weight);
+  if (next > oldLevel) {
+    level = next;
+    celebrate();
+  } else {
+    level = next;
+  }
+}
+
+function render() {
+  const [min, max] = rangeFor(level);
+
+  $('weight').textContent = fmt(weight);
+  $('coins').textContent = fmt(Math.floor(coins));
+  $('perClick').textContent = fmt(perClick);
+  $('perSecond').textContent = fmt(perSecond);
+
+  $('levelPill').textContent = 'NIVEL ' + level;
+
+  const progress = ((weight - min) / (max - min)) * 100;
+  $('progress').style.width = Math.max(0, Math.min(100, progress)) + '%';
+
+  $('progressText').textContent = `${fmt(weight)} / ${fmt(max)} kg para el siguiente nivel`;
+
+  $('techCost').textContent = fmt(techCost);
+  $('muscleCost').textContent = fmt(muscleCost);
+  $('generatorCost').textContent = fmt(generatorCost);
+
+  $('techDesc').textContent = `+${fmt(scale())} moneda(s) por clic. Nivel: ${techLevel}.`;
+  $('muscleDesc').textContent = `+${fmt(2.5 * scale())} kg por compra. Nivel: ${muscleLevel}.`;
+
+  $('buyTech').disabled = coins < techCost;
+  $('buyMuscle').disabled = coins < muscleCost;
+  $('buyGenerator').disabled = coins < generatorCost;
+
+  saveGame();
+}
+
+function floatCoin(text, x, y) {
+  const el = document.createElement('div');
+  el.className = 'float';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+
+$('lifter').addEventListener('click', e => {
+  coins += perClick;
+  const r = $('lifter').getBoundingClientRect();
+  floatCoin(
+    '+' + fmt(perClick) + ' 🪙',
+    e.clientX || (r.left + r.width / 2),
+    e.clientY || (r.top + 15)
+  );
+  render();
+});
+
+$('buyTech').addEventListener('click', () => {
+  if (coins < techCost) return;
+  coins -= techCost;
+  techLevel++;
+  perClick += scale();
+  techCost = Math.ceil(techCost * 1.55);
+  render();
+});
+
+$('buyMuscle').addEventListener('click', () => {
+  if (coins < muscleCost) return;
+  coins -= muscleCost;
+  muscleLevel++;
+  const oldLevel = level;
+  weight = Math.round((weight + 2.5 * scale()) * 10) / 10;
+  muscleCost = Math.ceil(muscleCost * 1.55);
+  updateLevel(oldLevel);
+  render();
+});
+
+$('buyGenerator').addEventListener('click', () => {
+  if (coins < generatorCost) return;
+  coins -= generatorCost;
+  generators++;
+  perSecond += scale();
+  generatorCost = Math.ceil(generatorCost * 1.55);
+  render();
+});
+
+function celebrate() {
+  $('celebrationTitle').textContent = '¡NIVEL ' + level + '!';
+  $('celebrationText').textContent = `¡Has alcanzado ${fmt(weight)} kg! Las mejoras ahora son más potentes.`;
+  $('celebration').classList.add('show');
+  confetti(120);
+  clearTimeout(celebrationTimer);
+  celebrationTimer = setTimeout(() => {
+    $('celebration').classList.remove('show');
+  }, 5000);
+}
+
+$('closeCelebration').addEventListener('click', () => {
+  $('celebration').classList.remove('show');
+});
+
+function confetti(amount) {
+  const colors = ['#ffcc4d', '#55d98b', '#65b8ff', '#ff6b8a', '#c59bff', '#ffffff'];
+  for (let i = 0; i < amount; i++) {
+    const el = document.createElement('i');
+    el.className = 'confetti';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (1.7 + Math.random() * 2.2) + 's';
+    el.style.animationDelay = Math.random() * 0.4 + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4500);
+  }
+}
+
+/* Botón para compartir por WhatsApp */
+$('shareWa').addEventListener('click', () => {
+  const url = window.location.href.startsWith('http') ? window.location.href : '';
+  const msg = `🏋️ ¡Ya levanto ${fmt(weight)} kg en press banca (Nivel ${level}) en Bench Clicker! ¿Puedes superarme? ${url}`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+});
+
+$('reset').addEventListener('click', () => {
+  if (!confirm('¿Seguro que quieres reiniciar todo el progreso?')) return;
+  weight = 20;
+  coins = 0;
+  level = 1;
+  techLevel = 0;
+  muscleLevel = 0;
+  generators = 0;
+  techCost = 15;
+  muscleCost = 60;
+  generatorCost = 25;
+  perClick = 1;
+  perSecond = 0;
+  localStorage.removeItem('benchClickerSave');
+  $('celebration').classList.remove('show');
+  render();
+});
+
+setInterval(() => {
+  if (perSecond > 0) {
+    coins += perSecond;
+    render();
+  }
+}, 1000);
+
+render();
+
+})();
+</script>
+</body>
+</html>
